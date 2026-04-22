@@ -1,68 +1,69 @@
 name: Create PR from Discord
 
 on:
-    workflow_dispatch:
-        inputs:
-            post_name:
-                required: true
-                type: string
-            target_dir:
-                required: true
-                type: string
-            type_enum:
-                required: true
-                type: string
-            author_name:
-                required: true
-                type: string
-            description:
-                required: true
-                type: string
-            author_pfp_url:
-                required: true
-                type: string
-            preview_url:
-                required: false
-                type: string
-            zip_url:
-                required: false
-                type: string
+  workflow_dispatch:
+    inputs:
+      target_dir:
+        required: true
+        type: string
+      post_name:
+        required: true
+        type: string
+      type_enum:
+        required: true
+        type: string
+      author_name:
+        required: true
+        type: string
+      author_pfp_url:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+      description:
+        required: true
+        type: string
+      preview_url:
+        required: false
+        type: string
+      zip_url:
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
-    create-pr:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
+  create-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
 
-            - name: Build Directory and Download Assets
-              run: |
-                  TARGET_PATH="${{ inputs.target_dir }}/${{ inputs.post_name }}"
-                  mkdir -p "$TARGET_PATH"
+      - name: Build directory and download assets
+        run: |
+          TARGET_PATH="${{ inputs.target_dir }}/${{ inputs.post_name }}"
+          mkdir -p "$TARGET_PATH"
 
-                  jq -n \
-                    --arg title "${{ inputs.post_name }}" \
-                    --arg version "1.0.0" \
-                    --argjson type "${{ inputs.type_enum }}" \
-                    --arg author "${{ inputs.author_name }}" \
-                    --arg desc "${{ inputs.description }}" \
-                    '{title: $title, version: $version, type: $type, author: $author, description: $desc}' > "$TARGET_PATH/manifest.json"
+          cat > "$TARGET_PATH/manifest.json" << EOF
+          {
+            "title": "${{ inputs.post_name }}",
+            "version": "${{ inputs.version }}",
+            "type": ${{ inputs.type_enum }},
+            "author": "${{ inputs.author_name }}",
+            "desc": "${{ inputs.description }}"
+          }
+          EOF
 
-                  if [ -n "${{ inputs.author_pfp_url }}" ]; then
-                    curl -sL "${{ inputs.author_pfp_url }}" -o "$TARGET_PATH/author.webp"
-                  fi
+          [ -n "${{ inputs.author_pfp_url }}" ] && curl -sL "${{ inputs.author_pfp_url }}" -o "$TARGET_PATH/author.webp"
+          [ -n "${{ inputs.preview_url }}" ] && curl -sL "${{ inputs.preview_url }}" -o "$TARGET_PATH/preview.webp"
+          [ -n "${{ inputs.zip_url }}" ] && curl -sL "${{ inputs.zip_url }}" -o "$TARGET_PATH/${{ inputs.post_name }}.zip"
 
-                  if [ -n "${{ inputs.preview_url }}" ]; then
-                    curl -sL "${{ inputs.preview_url }}" -o "$TARGET_PATH/preview.webp"
-                  fi
-
-                  if [ -n "${{ inputs.zip_url }}" ]; then
-                    curl -sL "${{ inputs.zip_url }}" -o "$TARGET_PATH/${{ inputs.post_name }}.zip"
-                  fi
-
-            - uses: peter-evans/create-pull-request@v6
-              with:
-                  token: ${{ secrets.PAT_TOKEN }}
-                  commit-message: "Add ${{ inputs.post_name }} to ${{ inputs.target_dir }}"
-                  title: "[${{ inputs.target_dir }}] ${{ inputs.post_name }}"
-                  branch: "discord-${{ inputs.target_dir }}-${{ github.run_id }}"
-                  body: "Automated PR created from Discord forum post."
+      - uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Add ${{ inputs.post_name }} to ${{ inputs.target_dir }}"
+          branch: "discord-${{ inputs.target_dir }}-${{ github.run_id }}"
+          title: "[${{ inputs.target_dir }}] ${{ inputs.post_name }}"
+          body: "Adds ${{ inputs.post_name }} (version ${{ inputs.version }}) by ${{ inputs.author_name }} to ${{ inputs.target_dir }}."
