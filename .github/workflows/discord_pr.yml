@@ -1,0 +1,62 @@
+name: Create PR from Discord
+
+on:
+    workflow_dispatch:
+        inputs:
+            username:
+                required: true
+                type: string
+            title:
+                required: true
+                type: string
+            content:
+                required: true
+                type: string
+            image_url:
+                required: false
+                type: string
+            zip_urls:
+                required: false
+                type: string
+
+jobs:
+    create-pr:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            pull-requests: write
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Create Post and Download Files
+              run: |
+                  mkdir -p new_post_files
+                  cd new_post_files
+
+                  echo "# ${{ inputs.title }}" > post.md
+                  echo "**Author:** ${{ inputs.username }}" >> post.md
+                  echo "" >> post.md
+                  echo "${{ inputs.content }}" >> post.md
+                  echo "" >> post.md
+
+                  if [ -n "${{ inputs.image_url }}" ]; then
+                    echo "![Image](${img_filename})" >> post.md
+                    curl -O -L "${{ inputs.image_url }}"
+                  fi
+
+                  if [ -n "${{ inputs.zip_urls }}" ]; then
+                    IFS=',' read -ra ZIPS <<< "${{ inputs.zip_urls }}"
+                    for url in "${ZIPS[@]}"; do
+                      if [ -n "$url" ]; then
+                        curl -O -L "$url"
+                      fi
+                    done
+                  fi
+
+            - uses: peter-evans/create-pull-request@v6
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  commit-message: "Add new post and files from Discord: ${{ inputs.title }}"
+                  title: "New Forum Post: ${{ inputs.title }}"
+                  branch: "discord-post-${{ github.run_id }}"
+                  body: "Automated PR created from Discord forum post."
