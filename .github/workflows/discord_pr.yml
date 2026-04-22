@@ -25,10 +25,10 @@ on:
         required: true
         type: string
       preview_url:
-        required: false
+        required: true
         type: string
       zip_url:
-        required: false
+        required: true
         type: string
 
 permissions:
@@ -56,9 +56,9 @@ jobs:
           }
           EOF
 
-          [ -n "${{ inputs.author_pfp_url }}" ] && curl -sL "${{ inputs.author_pfp_url }}" -o "$TARGET_PATH/author.webp"
-          [ -n "${{ inputs.preview_url }}" ] && curl -sL "${{ inputs.preview_url }}" -o "$TARGET_PATH/preview.webp"
-          [ -n "${{ inputs.zip_url }}" ] && curl -sL "${{ inputs.zip_url }}" -o "$TARGET_PATH/${{ inputs.post_name }}.zip"
+          curl -sL "${{ inputs.author_pfp_url }}" -o "$TARGET_PATH/author.webp"
+          curl -sL "${{ inputs.preview_url }}" -o "$TARGET_PATH/preview.webp"
+          curl -sL "${{ inputs.zip_url }}" -o "$TARGET_PATH/${{ inputs.post_name }}.zip"
 
       - uses: peter-evans/create-pull-request@v8
         with:
