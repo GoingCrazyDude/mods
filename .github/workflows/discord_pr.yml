@@ -52,7 +52,7 @@ jobs:
             "version": "${{ inputs.version }}",
             "type": ${{ inputs.type_enum }},
             "author": "${{ inputs.author_name }}",
-            "desc": "${{ inputs.description }}"
+            "description": "${{ inputs.description }}"
           }
           EOF
 
