@@ -57,9 +57,7 @@ jobs:
 
           curl -sL "${{ inputs.author_pfp_url }}" -o "$TARGET_PATH/author.webp"
           curl -sL "${{ inputs.preview_url }}" -o "$TARGET_PATH/preview.webp"
-
-          ZIP_FILENAME=$(printf '%s' "${{ inputs.post_name }}" | jq -Rr '@uri')
-          curl -sL "${{ inputs.zip_url }}" -o "$TARGET_PATH/${ZIP_FILENAME}.zip"
+          curl -sL "${{ inputs.zip_url }}" -o "$TARGET_PATH/${{ inputs.post_name }}.zip"
 
       - uses: peter-evans/create-pull-request@v8
         with:
